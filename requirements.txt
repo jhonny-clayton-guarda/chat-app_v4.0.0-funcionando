@@ -1,0 +1,13 @@
+requests
+flask
+flask-socketio
+gunicorn
+gevent
+python-dotenv
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+pytz
+firebase-admin
+firebase-messaging
