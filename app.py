@@ -4,7 +4,7 @@ monkey.patch_all()
 import os
 import json
 import io
-from flask import Flask, render_template, request as flask_request
+from flask import Flask, render_template, request as flask_request, send_from_directory
 from flask_socketio import SocketIO, emit
 from datetime import datetime
 import pytz
@@ -30,6 +30,11 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "supersecret")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# --- ROTA CRÍTICA PARA NOTIFICAÇÕES ---
+@app.route('/firebase-messaging-sw.js')
+def serve_sw():
+    return send_from_directory(os.getcwd(), 'firebase-messaging-sw.js', mimetype='application/javascript')
+
 # Google Drive Setup
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 DRIVE_FILE_NAME = "historico_chat.json"
@@ -38,6 +43,8 @@ creds = service_account.Credentials.from_service_account_info(
     SERVICE_ACCOUNT_INFO,
     scopes=["https://www.googleapis.com/auth/drive"]
 )
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 drive_service = build("drive", "v3", credentials=creds)
 
 def get_or_create_drive_file():
@@ -84,8 +91,6 @@ def get_local_time():
 
 def send_push_notification(title, message_body, token):
     try:
-        # Usamos 'data' em vez de 'notification' para ter controle total no Service Worker
-        # E 'notification' para o sistema operacional exibir automaticamente se o SW falhar
         message = messaging.Message(
             notification=messaging.Notification(
                 title=title,
@@ -93,16 +98,13 @@ def send_push_notification(title, message_body, token):
             ),
             data={
                 "title": title,
-                "body": message_body,
-                "click_action": "FLUTTER_NOTIFICATION_CLICK"
+                "body": message_body
             },
             android=messaging.AndroidConfig(
                 priority='high',
                 notification=messaging.AndroidNotification(
                     sound='default',
-                    channel_id='high_importance_channel', # Ajuda em Androids novos
                     priority='high',
-                    sticky=False,
                     visibility='public'
                 ),
             ),
@@ -170,3 +172,4 @@ def handle_disconnect():
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000)
+
