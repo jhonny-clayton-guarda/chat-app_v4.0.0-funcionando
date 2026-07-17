@@ -48,3 +48,33 @@ self.addEventListener('activate', event => {
     })
   );
 });
+
+// Firebase Messaging Service Worker
+importScripts('https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/8.10.0/firebase-messaging.js');
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAGkxSC0X29UoQLfi0asIEiqtRVsuo_9I0", // Seu apiKey
+  authDomain: "guarda-chat-app-fde73.firebaseapp.com",
+  projectId: "guarda-chat-app-fde73",
+  storageBucket: "guarda-chat-app-fde73.firebasestorage.app",
+  messagingSenderId: "566174764881",
+  appId: "1:566174764881:web:e0288bf090f018396c8d70",
+  measurementId: "G-3CP6L65Z3W"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage(function(payload) {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: '/static/icon-192.png'
+  };
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
